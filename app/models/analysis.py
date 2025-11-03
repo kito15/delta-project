@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 import json
 from flask import current_app, g
@@ -161,6 +162,47 @@ class Analysis:
                 ))
             
             return analyses
+        finally:
+            cursor.close()
+
+    @classmethod
+    def delete_all_for_user(cls, user_id):
+        """Delete all analyses and associated files for a user.
+
+        Returns:
+            int: Number of analyses deleted.
+        """
+        db = get_db()
+        cursor = db.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT file_path FROM analyses WHERE user_id = %s",
+                (user_id,)
+            )
+            rows = cursor.fetchall()
+
+            file_paths = [row.get('file_path') for row in rows if row.get('file_path')]
+
+            for path in file_paths:
+                try:
+                    if path and os.path.exists(path):
+                        os.remove(path)
+                except OSError as exc:
+                    try:
+                        current_app.logger.warning(
+                            'Failed to remove analysis file %s: %s', path, exc
+                        )
+                    except Exception:
+                        pass
+
+            cursor.execute("DELETE FROM analyses WHERE user_id = %s", (user_id,))
+            deleted_count = cursor.rowcount
+            db.commit()
+            return deleted_count
+        except Exception as exc:
+            db.rollback()
+            raise exc
         finally:
             cursor.close()
 

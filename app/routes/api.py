@@ -106,6 +106,28 @@ def get_history():
         'history': history
     }), 200
 
+
+@bp.route('/history', methods=['DELETE'])
+@login_required
+def clear_history():
+    """Delete all analyses for the current user"""
+    try:
+        deleted_count = Analysis.delete_all_for_user(current_user.id)
+
+        message = 'History cleared successfully' if deleted_count else 'No history to clear'
+
+        return jsonify({
+            'success': True,
+            'deleted': deleted_count,
+            'message': message
+        }), 200
+    except Exception as exc:
+        current_app.logger.exception('Failed to clear history for user %s', current_user.id)
+        return jsonify({
+            'success': False,
+            'message': f'Failed to clear history: {str(exc)}'
+        }), 500
+
 @bp.route('/results/<int:analysis_id>', methods=['GET'])
 @login_required
 def get_results(analysis_id):

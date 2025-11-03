@@ -372,6 +372,37 @@ class DataQualityDashboard {
         }
     }
 
+    async clearHistory(button) {
+        if (button) {
+            button.disabled = true;
+        }
+
+        try {
+            const response = await fetch('/api/history', {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Failed to clear history');
+            }
+
+            this.history = [];
+            this.renderHistory();
+
+            alert(result.message || 'History cleared successfully');
+        } catch (error) {
+            console.error('Error clearing history:', error);
+            alert('Failed to clear history: ' + error.message);
+        } finally {
+            await this.loadHistory();
+            if (button) {
+                button.disabled = false;
+            }
+        }
+    }
+
     renderHistory() {
         const historyList = document.getElementById('history-list');
 
@@ -960,12 +991,16 @@ class DataQualityDashboard {
             this.exportReport();
         });
 
-        document.getElementById('clear-history-btn').addEventListener('click', async () => {
-            if (confirm('Clear all history?')) {
-                // Note: Would need to implement DELETE all endpoint
-                alert('Clear all history feature coming soon');
-            }
-        });
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', async () => {
+                if (!confirm('Clear all history?')) {
+                    return;
+                }
+
+                await this.clearHistory(clearHistoryBtn);
+            });
+        }
 
         // Detail panel event listeners
         document.getElementById('detail-close').addEventListener('click', () => {
