@@ -1,6 +1,6 @@
 import os
 import pymysql
-from flask import Flask, g
+from flask import Flask, g, current_app
 from flask_login import LoginManager
 from config import config
 
@@ -11,11 +11,11 @@ def get_db():
     """Get database connection from Flask g object or create new one"""
     if 'db' not in g:
         g.db = pymysql.connect(
-            host=Flask.current_app.config['MYSQL_HOST'],
-            port=Flask.current_app.config['MYSQL_PORT'],
-            user=Flask.current_app.config['MYSQL_USER'],
-            password=Flask.current_app.config['MYSQL_PASSWORD'],
-            database=Flask.current_app.config['MYSQL_DATABASE'],
+            host=current_app.config['MYSQL_HOST'],
+            port=current_app.config['MYSQL_PORT'],
+            user=current_app.config['MYSQL_USER'],
+            password=current_app.config['MYSQL_PASSWORD'],
+            database=current_app.config['MYSQL_DATABASE'],
             cursorclass=pymysql.cursors.DictCursor,
             autocommit=False
         )
