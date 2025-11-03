@@ -477,60 +477,60 @@ class DataQualityDashboard {
     }
 
     generateDetailContent(issue) {
-        if (issue.type === 'Statistical Outlier') {
-            // Hide executive summary and full analysis sections initially
-            document.getElementById('executive-summary').style.display = 'none';
-            document.getElementById('full-analysis-sections').style.display = 'none';
+        const buttonSection = document.getElementById('ai-analysis-button-section');
+        const buttonContainer = document.getElementById('ai-analysis-button-container');
+        const summarySection = document.getElementById('executive-summary');
+        const summaryText = document.getElementById('summary-text');
+        const fullSections = document.getElementById('full-analysis-sections');
+        const impactEl = document.getElementById('detail-impact');
+        const recommendationsEl = document.getElementById('detail-recommendations');
+        const contextEl = document.getElementById('detail-context');
 
-            // Show button section
-            document.getElementById('ai-analysis-button-section').style.display = 'block';
-
-            // For outliers, show button to generate AI analysis
-            const placeholderHTML = `
-                <div class="ai-analysis-container" id="ai-analysis-container">
-                    <p style="color: var(--cool-gray); margin-bottom: var(--space-4);">
-                        Click the button below to generate AI-powered insights for these outliers.
-                    </p>
-                    <button class="btn-secondary" id="generate-analysis-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                        </svg>
-                        Generate Outlier Analysis
-                    </button>
-                </div>
-            `;
-
-            document.getElementById('ai-analysis-button-container').innerHTML = placeholderHTML;
-
-            // Setup button click handler
-            setTimeout(() => {
-                const btn = document.getElementById('generate-analysis-btn');
-                if (btn) {
-                    btn.addEventListener('click', () => this.generateAIAnalysis(issue));
-                }
-            }, 0);
-        } else {
-            // Hide button section for non-outlier issues
-            document.getElementById('ai-analysis-button-section').style.display = 'none';
-            document.getElementById('executive-summary').style.display = 'none';
-
-            // Show full analysis sections for other issue types
-            document.getElementById('full-analysis-sections').style.display = 'block';
-
-            // Impact Analysis
-            const impactHTML = this.generateImpactAnalysis(issue);
-            document.getElementById('detail-impact').innerHTML = impactHTML;
-
-            // Recommendations
-            const recommendationsHTML = this.generateRecommendations(issue);
-            document.getElementById('detail-recommendations').innerHTML = recommendationsHTML;
-
-            // Delta Dental Context
-            const contextHTML = this.generateDeltaDentalContext(issue);
-            document.getElementById('detail-context').innerHTML = contextHTML;
+        if (!buttonSection || !buttonContainer || !summarySection || !fullSections || !impactEl || !recommendationsEl || !contextEl) {
+            return;
         }
+
+        // Reset previous content
+        summarySection.style.display = 'none';
+        summaryText.innerHTML = '';
+        fullSections.style.display = 'none';
+        impactEl.innerHTML = '';
+        recommendationsEl.innerHTML = '';
+        contextEl.innerHTML = '';
+
+        // Show button section with contextual messaging
+        const isOutlier = issue.type === 'Statistical Outlier';
+        const helperCopy = isOutlier
+            ? 'Click the button below to generate AI-powered insights for these outliers.'
+            : `Click the button below to generate AI insights for this ${issue.type.toLowerCase()} issue.`;
+        const buttonLabel = isOutlier ? 'Generate Outlier Analysis' : 'Generate Analysis';
+
+        const placeholderHTML = `
+            <div class="ai-analysis-container" id="ai-analysis-container">
+                <p style="color: var(--cool-gray); margin-bottom: var(--space-4);">
+                    ${helperCopy}
+                </p>
+                <button class="btn-secondary" id="generate-analysis-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    ${buttonLabel}
+                </button>
+            </div>
+        `;
+
+        buttonSection.style.display = 'block';
+        buttonContainer.innerHTML = placeholderHTML;
+
+        // Setup button click handler
+        setTimeout(() => {
+            const btn = document.getElementById('generate-analysis-btn');
+            if (btn) {
+                btn.addEventListener('click', () => this.generateAIAnalysis(issue));
+            }
+        }, 0);
     }
 
     generateImpactAnalysis(issue) {
@@ -685,14 +685,26 @@ class DataQualityDashboard {
         `;
 
         try {
-            const response = await fetch(`/api/analysis/${this.analysisResults.analysis_id}/generate-outlier-analysis`, {
+            if (!this.analysisResults || !this.analysisResults.analysis_id) {
+                throw new Error('Analysis ID not found. Please re-run the analysis.');
+            }
+
+            const percentage = issue.percentage !== undefined
+                ? parseFloat(issue.percentage)
+                : parseFloat(((issue.count / (this.analysisResults.totalRows || 1)) * 100).toFixed(1));
+
+            const response = await fetch(`/api/analysis/${this.analysisResults.analysis_id}/generate-issue-analysis`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     issue_type: issue.type,
-                    column: issue.column
+                    column: issue.column,
+                    severity: issue.severity,
+                    count: issue.count,
+                    percentage,
+                    description: issue.description
                 })
             });
 
