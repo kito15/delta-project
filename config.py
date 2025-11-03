@@ -55,10 +55,12 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     SESSION_COOKIE_SECURE = True  # Require HTTPS
-    # Force MySQL in production
-    if not os.environ.get('DATABASE_URL'):
-        # Try internal Railway network first (faster)
-        SQLALCHEMY_DATABASE_URI = Config.MYSQL_INTERNAL_URL
+    
+    # Force MySQL in production - NEVER use SQLite
+    # Priority: DATABASE_URL env var > MYSQL_INTERNAL_URL > MYSQL_PUBLIC_URL (hardcoded)
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        os.environ.get('MYSQL_INTERNAL_URL') or \
+        'mysql+pymysql://root:RnFHqvEHjFeBlWzCAYELkVAyRRqgv1kq@mysql.railway.internal:3306/railway'
 
 class TestingConfig(Config):
     """Testing configuration"""
