@@ -28,14 +28,24 @@ def close_db(e=None):
         db.close()
 
 def init_db(app):
-    """Initialize database tables"""
+    """Initialize database tables - drops and recreates all tables"""
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
         
+        # Disable foreign key checks to allow dropping tables in any order
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+        
+        # Drop existing tables if they exist (drop in reverse order of dependencies)
+        cursor.execute("DROP TABLE IF EXISTS analyses")
+        cursor.execute("DROP TABLE IF EXISTS users")
+        
+        # Re-enable foreign key checks
+        cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+        
         # Create users table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(80) UNIQUE NOT NULL,
                 email VARCHAR(120) UNIQUE NOT NULL,
@@ -49,7 +59,7 @@ def init_db(app):
         
         # Create analyses table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS analyses (
+            CREATE TABLE analyses (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 filename VARCHAR(255) NOT NULL,
@@ -65,28 +75,6 @@ def init_db(app):
                 INDEX idx_created_at (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
-        
-        # Alter existing table if file_size or total_rows is still INT
-        # Check if table exists first, then alter columns if needed
-        cursor.execute("SHOW TABLES LIKE 'analyses'")
-        if cursor.fetchone():
-            # Modify file_size to BIGINT if it exists and is still INT
-            try:
-                cursor.execute("""
-                    ALTER TABLE analyses 
-                    MODIFY COLUMN file_size BIGINT
-                """)
-            except pymysql.err.OperationalError:
-                pass  # Column might already be BIGINT or table structure issue - ignore
-            
-            # Modify total_rows to BIGINT if it exists and is still INT
-            try:
-                cursor.execute("""
-                    ALTER TABLE analyses 
-                    MODIFY COLUMN total_rows BIGINT
-                """)
-            except pymysql.err.OperationalError:
-                pass  # Column might already be BIGINT or table structure issue - ignore
         
         db.commit()
         cursor.close()
