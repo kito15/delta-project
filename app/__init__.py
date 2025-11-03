@@ -53,9 +53,9 @@ def init_db(app):
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 filename VARCHAR(255) NOT NULL,
-                file_size INT,
+                file_size BIGINT,
                 file_path VARCHAR(500),
-                total_rows INT,
+                total_rows BIGINT,
                 total_columns INT,
                 quality_score INT,
                 results_json TEXT,
@@ -65,6 +65,28 @@ def init_db(app):
                 INDEX idx_created_at (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
+        
+        # Alter existing table if file_size or total_rows is still INT
+        # Check if table exists first, then alter columns if needed
+        cursor.execute("SHOW TABLES LIKE 'analyses'")
+        if cursor.fetchone():
+            # Modify file_size to BIGINT if it exists and is still INT
+            try:
+                cursor.execute("""
+                    ALTER TABLE analyses 
+                    MODIFY COLUMN file_size BIGINT
+                """)
+            except pymysql.err.OperationalError:
+                pass  # Column might already be BIGINT or table structure issue - ignore
+            
+            # Modify total_rows to BIGINT if it exists and is still INT
+            try:
+                cursor.execute("""
+                    ALTER TABLE analyses 
+                    MODIFY COLUMN total_rows BIGINT
+                """)
+            except pymysql.err.OperationalError:
+                pass  # Column might already be BIGINT or table structure issue - ignore
         
         db.commit()
         cursor.close()
