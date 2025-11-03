@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Project Demo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/login-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <!-- Left Panel - Branding -->
+        <div class="login-panel-left">
+            <div class="login-branding">
+                <div class="login-logo">
+                    <div class="logo-icon-large"></div>
+                    <h1 class="brand-title">Project Demo</h1>
+                </div>
+                <p class="brand-tagline">Data Quality Dashboard</p>
+                <div class="brand-features">
+                    <div class="feature-item">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span>Instant CSV Analysis</span>
+                    </div>
+                    <div class="feature-item">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M2 12h20"/>
+                        </svg>
+                        <span>Quality Scoring</span>
+                    </div>
+                    <div class="feature-item">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        <span>History Tracking</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Login Form -->
+        <div class="login-panel-right">
+            <div class="login-form-container">
+                <div class="login-header">
+                    <h2 class="login-title">Welcome Back</h2>
+                    <p class="login-subtitle">Sign in to access your dashboard</p>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input
+                            type="email"
+                            id="email"
+                            class="form-input"
+                            placeholder="you@example.com"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            class="form-input"
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                        >
+                    </div>
+
+                    <div class="form-group form-checkbox">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember" class="checkbox-input">
+                            <span class="checkbox-text">Remember me</span>
+                        </label>
+                    </div>
+
+                    <div class="form-error" id="login-error" style="display: none;"></div>
+
+                    <button type="submit" class="btn-primary" id="login-btn">
+                        <span id="login-btn-text">Sign In</span>
+                        <svg class="btn-loader" id="login-loader" viewBox="0 0 24 24" style="display: none;">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <!-- Toggle to Signup -->
+                <div class="auth-toggle">
+                    <span class="toggle-text">Don't have an account?</span>
+                    <button class="toggle-link" id="show-signup">Create Account</button>
+                </div>
+            </div>
+
+            <!-- Signup Form (Hidden by default) -->
+            <div class="login-form-container" id="signup-container" style="display: none;">
+                <div class="login-header">
+                    <h2 class="login-title">Create Account</h2>
+                    <p class="login-subtitle">Get started with Project Demo</p>
+                </div>
+
+                <form id="signup-form" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="signup-username">Username</label>
+                        <input
+                            type="text"
+                            id="signup-username"
+                            class="form-input"
+                            placeholder="johndoe"
+                            required
+                            autocomplete="username"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-email">Email Address</label>
+                        <input
+                            type="email"
+                            id="signup-email"
+                            class="form-input"
+                            placeholder="you@example.com"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="signup-password">Password</label>
+                        <input
+                            type="password"
+                            id="signup-password"
+                            class="form-input"
+                            placeholder="Create a password"
+                            required
+                            autocomplete="new-password"
+                        >
+                    </div>
+
+                    <div class="form-error" id="signup-error" style="display: none;"></div>
+
+                    <button type="submit" class="btn-primary" id="signup-btn">
+                        <span id="signup-btn-text">Create Account</span>
+                        <svg class="btn-loader" id="signup-loader" viewBox="0 0 24 24" style="display: none;">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <!-- Toggle to Login -->
+                <div class="auth-toggle">
+                    <span class="toggle-text">Already have an account?</span>
+                    <button class="toggle-link" id="show-login">Sign In</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/login.js"></script>
+</body>
+</html>

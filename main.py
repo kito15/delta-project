@@ -1,10 +1,24 @@
-from flask import Flask, render_template
+import os
+from app import create_app, db
+from app.models.user import User
+from app.models.analysis import Analysis
 
-app = Flask(__name__)
+# Determine environment (Railway sets PORT environment variable)
+config_name = 'production' if os.getenv('PORT') else os.getenv('FLASK_ENV', 'development')
 
-@app.route('/')
-def index():
-  return render_template('index.html')
+# Create Flask application
+app = create_app(config_name)
+
+# Shell context for Flask CLI
+@app.shell_context_processor
+def make_shell_context():
+    return {
+        'db': db,
+        'User': User,
+        'Analysis': Analysis
+    }
 
 if __name__ == '__main__':
-  app.run(port=5000)
+    # Railway provides PORT environment variable
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
