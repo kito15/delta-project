@@ -62,7 +62,7 @@ def analyze_file():
         analysis = Analysis(
             user_id=current_user.id,
             filename=results['filename'],
-            file_size=results['fileSize'],
+            file_size=results.get('fileSizeBytes', os.path.getsize(file_path)),
             file_path=file_path,
             total_rows=results['totalRows'],
             total_columns=results['totalColumns'],

@@ -18,6 +18,7 @@ class AnalysisService:
         analysis = {
             'filename': filename,
             'fileSize': AnalysisService.format_file_size(file_size),
+            'fileSizeBytes': file_size,
             'timestamp': datetime.utcnow().isoformat(),
             'totalRows': len(df),
             'totalColumns': len(df.columns),
