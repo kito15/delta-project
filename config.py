@@ -12,27 +12,30 @@ class Config:
     instance_path = os.path.join(basedir, 'instance')
     os.makedirs(instance_path, exist_ok=True)
 
-    # Railway MySQL Database Configuration
-    def get_mysql_url():
-        # Priority: MYSQL_URL (internal, fastest) > MYSQL_PUBLIC_URL > DATABASE_URL
-        mysql_url = os.environ.get('MYSQL_URL') or \
-                    os.environ.get('MYSQL_PUBLIC_URL') or \
-                    os.environ.get('DATABASE_URL')
-        
-        if mysql_url and mysql_url.startswith('mysql://'):
-            # Convert to pymysql driver for SQLAlchemy
-            return mysql_url.replace('mysql://', 'mysql+pymysql://', 1)
-        return mysql_url
+
+    # Railway provides MYSQL_URL (internal) for apps within Railway
+    # Priority: MYSQL_URL (internal) > DATABASE_URL > hardcoded internal URL
+    _mysql_url = os.environ.get('MYSQL_URL') or \
+                 os.environ.get('DATABASE_URL') or \
+                 'mysql://root:RnFHqvEhjFeBiWzCAYeLKVwyRRqgvlKq@mysql.railway.internal:3306/railway'
     
-    SQLALCHEMY_DATABASE_URI = get_mysql_url() or \
-        'mysql+pymysql://root:RnFHqvEhjFeBiWzCAYeLKVwyRRqgvlKq@mysql.railway.internal:3306/railway'
+    # Convert mysql:// to mysql+pymysql:// for SQLAlchemy
+    if _mysql_url and _mysql_url.startswith('mysql://'):
+        SQLALCHEMY_DATABASE_URI = _mysql_url.replace('mysql://', 'mysql+pymysql://', 1)
+    else:
+        SQLALCHEMY_DATABASE_URI = _mysql_url
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_size': 10,
-        'max_overflow': 20
+        'max_overflow': 20,
+        'connect_args': {
+            'connect_timeout': 10,
+            'read_timeout': 30,
+            'write_timeout': 30
+        }
     }
 
     # File upload settings
@@ -59,8 +62,6 @@ class ProductionConfig(Config):
     DEBUG = False
     SESSION_COOKIE_SECURE = True  # Require HTTPS
     
-    # Force MySQL in production - uses Railway's auto-provided env vars
-    # Railway provides MYSQL_URL and MYSQL_PUBLIC_URL automatically
     pass  # Inherits SQLALCHEMY_DATABASE_URI from Config
 
 class TestingConfig(Config):
