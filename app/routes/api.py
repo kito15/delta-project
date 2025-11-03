@@ -2,7 +2,6 @@ import os
 from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app import db
 from app.models.analysis import Analysis
 from app.services.file_service import FileService
 from app.services.analysis_service import AnalysisService
@@ -70,9 +69,7 @@ def analyze_file():
             quality_score=results['qualityScore']
         )
         analysis.set_results(results)
-
-        db.session.add(analysis)
-        db.session.commit()
+        analysis.save()
 
         response_data = results.copy()
         response_data['analysis_id'] = analysis.id
@@ -89,10 +86,7 @@ def analyze_file():
 @login_required
 def get_history():
     """Get analysis history for current user"""
-    analyses = Analysis.query.filter_by(user_id=current_user.id)\
-        .order_by(Analysis.created_at.desc())\
-        .limit(20)\
-        .all()
+    analyses = Analysis.get_by_user_id(current_user.id, limit=20)
 
     history = []
     for analysis in analyses:
@@ -116,7 +110,7 @@ def get_history():
 @login_required
 def get_results(analysis_id):
     """Get specific analysis results"""
-    analysis = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
+    analysis = Analysis.get_by_id(analysis_id, user_id=current_user.id)
 
     if not analysis:
         return jsonify({'success': False, 'message': 'Analysis not found'}), 404
@@ -133,7 +127,7 @@ def get_results(analysis_id):
 @login_required
 def export_results(analysis_id):
     """Export analysis results as JSON file"""
-    analysis = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
+    analysis = Analysis.get_by_id(analysis_id, user_id=current_user.id)
 
     if not analysis:
         return jsonify({'success': False, 'message': 'Analysis not found'}), 404
@@ -158,7 +152,7 @@ def export_results(analysis_id):
 @login_required
 def get_affected_rows(analysis_id):
     """Get rows affected by a specific issue"""
-    analysis = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
+    analysis = Analysis.get_by_id(analysis_id, user_id=current_user.id)
 
     if not analysis:
         return jsonify({'success': False, 'message': 'Analysis not found'}), 404
@@ -204,7 +198,7 @@ def get_affected_rows(analysis_id):
 @login_required
 def generate_outlier_analysis(analysis_id):
     """Generate AI-powered analysis for statistical outliers using Gemini"""
-    analysis = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
+    analysis = Analysis.get_by_id(analysis_id, user_id=current_user.id)
 
     if not analysis:
         return jsonify({'success': False, 'message': 'Analysis not found'}), 404
@@ -275,7 +269,7 @@ def generate_outlier_analysis(analysis_id):
 @login_required
 def delete_analysis(analysis_id):
     """Delete analysis and associated file"""
-    analysis = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
+    analysis = Analysis.get_by_id(analysis_id, user_id=current_user.id)
 
     if not analysis:
         return jsonify({'success': False, 'message': 'Analysis not found'}), 404
@@ -286,11 +280,9 @@ def delete_analysis(analysis_id):
         except:
             pass  # File already deleted or inaccessible
 
-    db.session.delete(analysis)
-    db.session.commit()
+    analysis.delete()
 
     return jsonify({
         'success': True,
         'message': 'Analysis deleted successfully'
     }), 200
-

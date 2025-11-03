@@ -1,26 +1,24 @@
 from datetime import datetime
 import json
-from app import db
+from flask import current_app, g
+from app import get_db
 
-class Analysis(db.Model):
+class Analysis:
     """Analysis results model"""
-    __tablename__ = 'analyses'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    filename = db.Column(db.String(255), nullable=False)
-    file_size = db.Column(db.Integer)
-    file_path = db.Column(db.String(500))
-
-    # Analysis metrics
-    total_rows = db.Column(db.Integer)
-    total_columns = db.Column(db.Integer)
-    quality_score = db.Column(db.Integer)
-
-    # Full results stored as JSON
-    results_json = db.Column(db.Text)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    def __init__(self, id=None, user_id=None, filename=None, file_size=None,
+                 file_path=None, total_rows=None, total_columns=None, 
+                 quality_score=None, results_json=None, created_at=None):
+        self.id = id
+        self.user_id = user_id
+        self.filename = filename
+        self.file_size = file_size
+        self.file_path = file_path
+        self.total_rows = total_rows
+        self.total_columns = total_columns
+        self.quality_score = quality_score
+        self.results_json = results_json
+        self.created_at = created_at
 
     def set_results(self, results_dict):
         """Store results dictionary as JSON"""
@@ -31,6 +29,140 @@ class Analysis(db.Model):
         if self.results_json:
             return json.loads(self.results_json)
         return {}
+
+    def save(self):
+        """Save analysis to database (INSERT or UPDATE)"""
+        db = get_db()
+        cursor = db.cursor()
+        
+        try:
+            if self.id is None:
+                # INSERT new analysis
+                cursor.execute("""
+                    INSERT INTO analyses 
+                    (user_id, filename, file_size, file_path, total_rows, 
+                     total_columns, quality_score, results_json, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (self.user_id, self.filename, self.file_size, self.file_path,
+                      self.total_rows, self.total_columns, self.quality_score,
+                      self.results_json, datetime.utcnow()))
+                self.id = cursor.lastrowid
+            else:
+                # UPDATE existing analysis
+                cursor.execute("""
+                    UPDATE analyses 
+                    SET user_id = %s, filename = %s, file_size = %s, file_path = %s,
+                        total_rows = %s, total_columns = %s, quality_score = %s,
+                        results_json = %s
+                    WHERE id = %s
+                """, (self.user_id, self.filename, self.file_size, self.file_path,
+                      self.total_rows, self.total_columns, self.quality_score,
+                      self.results_json, self.id))
+            
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            raise e
+        finally:
+            cursor.close()
+
+    def delete(self):
+        """Delete analysis from database"""
+        if self.id is None:
+            return False
+        
+        db = get_db()
+        cursor = db.cursor()
+        
+        try:
+            cursor.execute("DELETE FROM analyses WHERE id = %s", (self.id,))
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            raise e
+        finally:
+            cursor.close()
+
+    @classmethod
+    def get_by_id(cls, analysis_id, user_id=None):
+        """Get analysis by ID, optionally filtered by user_id"""
+        db = get_db()
+        cursor = db.cursor()
+        
+        try:
+            if user_id is not None:
+                cursor.execute("""
+                    SELECT id, user_id, filename, file_size, file_path, 
+                           total_rows, total_columns, quality_score, 
+                           results_json, created_at
+                    FROM analyses WHERE id = %s AND user_id = %s
+                """, (analysis_id, user_id))
+            else:
+                cursor.execute("""
+                    SELECT id, user_id, filename, file_size, file_path, 
+                           total_rows, total_columns, quality_score, 
+                           results_json, created_at
+                    FROM analyses WHERE id = %s
+                """, (analysis_id,))
+            
+            row = cursor.fetchone()
+            
+            if row:
+                return cls(
+                    id=row['id'],
+                    user_id=row['user_id'],
+                    filename=row['filename'],
+                    file_size=row['file_size'],
+                    file_path=row['file_path'],
+                    total_rows=row['total_rows'],
+                    total_columns=row['total_columns'],
+                    quality_score=row['quality_score'],
+                    results_json=row['results_json'],
+                    created_at=row['created_at']
+                )
+            return None
+        finally:
+            cursor.close()
+
+    @classmethod
+    def get_by_user_id(cls, user_id, limit=20):
+        """Get analyses by user_id, ordered by created_at DESC"""
+        db = get_db()
+        cursor = db.cursor()
+        
+        try:
+            cursor.execute("""
+                SELECT id, user_id, filename, file_size, file_path, 
+                       total_rows, total_columns, quality_score, 
+                       results_json, created_at
+                FROM analyses 
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+            """, (user_id, limit))
+            
+            rows = cursor.fetchall()
+            analyses = []
+            
+            for row in rows:
+                analyses.append(cls(
+                    id=row['id'],
+                    user_id=row['user_id'],
+                    filename=row['filename'],
+                    file_size=row['file_size'],
+                    file_path=row['file_path'],
+                    total_rows=row['total_rows'],
+                    total_columns=row['total_columns'],
+                    quality_score=row['quality_score'],
+                    results_json=row['results_json'],
+                    created_at=row['created_at']
+                ))
+            
+            return analyses
+        finally:
+            cursor.close()
 
     def to_dict(self, include_results=False):
         """Convert analysis to dictionary"""
@@ -52,4 +184,3 @@ class Analysis(db.Model):
 
     def __repr__(self):
         return f'<Analysis {self.id}: {self.filename}>'
-

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from flask_login import login_user, logout_user, current_user
-from app import db, login_manager
+from app import login_manager
 from app.models.user import User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -8,7 +8,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 @login_manager.user_loader
 def load_user(user_id):
     """Load user by ID for Flask-Login"""
-    return User.query.get(int(user_id))
+    return User.get_by_id(int(user_id))
 
 @bp.route('/login', methods=['GET'])
 def login():
@@ -33,7 +33,7 @@ def login_post():
         return jsonify({'success': False, 'message': 'Email and password are required'}), 400
 
     # Find user by email
-    user = User.query.filter_by(email=email).first()
+    user = User.get_by_email(email)
 
     if not user or not user.check_password(password):
         return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
@@ -67,18 +67,16 @@ def signup():
         return jsonify({'success': False, 'message': 'Invalid email format'}), 400
 
     # Check if user already exists
-    if User.query.filter_by(email=email).first():
+    if User.get_by_email(email):
         return jsonify({'success': False, 'message': 'Email already registered'}), 409
 
-    if User.query.filter_by(username=username).first():
+    if User.get_by_username(username):
         return jsonify({'success': False, 'message': 'Username already taken'}), 409
 
     # Create new user
     user = User(username=username, email=email)
     user.set_password(password)
-
-    db.session.add(user)
-    db.session.commit()
+    user.save()
 
     # Log in user automatically
     login_user(user)
@@ -105,4 +103,3 @@ def profile():
         'success': True,
         'user': current_user.to_dict()
     }), 200
-
