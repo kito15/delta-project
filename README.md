@@ -142,6 +142,8 @@ First visit shows a login page. Click "Create Account" to sign up:
 
 You're automatically logged in after signup.
 
+![Login Page](./login.jpeg)
+
 **Logging In**
 
 If you already have an account:
@@ -154,6 +156,8 @@ There's a "Remember me" checkbox if you want to stay logged in longer.
 **What You'll See**
 
 After logging in, there's a sidebar on the left with Upload, Analyze, and History. Your username shows in the bottom of the sidebar. The main area is where you upload files and see results.
+
+![Dashboard](./dashboard.jpeg)
 
 ### Uploading Files
 
@@ -187,6 +191,8 @@ After you drop or select a file:
 3. You'll see "Processing..." while it works
 4. When done, quick stats appear: rows, columns, file size, and quality score
 5. It switches to the Analyze view automatically
+
+![Upload Section](./uploadsection.jpeg)
 
 **Tips**
 - First row should be column names, not actual data
@@ -253,6 +259,10 @@ Most issue types have a "View Affected Rows" button. Click it to see:
 - Row numbers so you can find them in your original file
 
 Makes it way easier to actually fix the problems.
+
+![Affected Rows](./affectedrows.jpeg)
+
+![Rows View](./rows.jpeg)
 
 **Severity Levels**
 
@@ -337,6 +347,8 @@ History shows all your past analyses.
    - Rows and columns
    - When you analyzed it
    - How many issues
+
+![Analysis History](./analysishistory.jpeg)
 
 **Looking at Old Results**
 
