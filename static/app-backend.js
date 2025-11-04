@@ -4,6 +4,9 @@ class DataQualityDashboard {
         this.currentFileId = null;
         this.analysisResults = null;
         this.history = [];
+        this.modalElement = null;
+        this.modalRefs = {};
+        this.activeModalConfirmHandler = null;
 
         this.init();
     }
@@ -12,6 +15,7 @@ class DataQualityDashboard {
         this.loadUserProfile();
         this.setupNavigation();
         this.setupFileUpload();
+        this.setupModal();
         this.setupButtons();
         await this.loadHistory();
     }
@@ -126,6 +130,113 @@ class DataQualityDashboard {
                 alert('Please upload a CSV file');
             }
         });
+    }
+
+    setupModal() {
+        this.modalElement = document.getElementById('feedback-modal');
+
+        if (!this.modalElement) {
+            return;
+        }
+
+        this.modalRefs = {
+            title: this.modalElement.querySelector('[data-modal-title]'),
+            body: this.modalElement.querySelector('[data-modal-body]'),
+            icon: this.modalElement.querySelector('[data-modal-icon]'),
+            confirmButton: this.modalElement.querySelector('[data-modal-confirm]'),
+            closeTargets: Array.from(this.modalElement.querySelectorAll('[data-modal-close]'))
+        };
+
+        if (this.modalRefs.closeTargets.length) {
+            this.modalRefs.closeTargets.forEach((el) => {
+                el.addEventListener('click', () => this.hideModal());
+            });
+        }
+
+        if (this.modalRefs.confirmButton) {
+            this.modalRefs.confirmButton.addEventListener('click', () => this.hideModal(true));
+        }
+
+        this.modalElement.setAttribute('aria-hidden', 'true');
+    }
+
+    showModal({
+        title = 'Notification',
+        message = '',
+        variant = 'info',
+        confirmLabel = 'Got it',
+        onConfirm = null
+    } = {}) {
+        if (!this.modalElement || !this.modalRefs || !this.modalRefs.title || !this.modalRefs.body || !this.modalRefs.icon || !this.modalRefs.confirmButton) {
+            if (message) {
+                alert(message);
+            }
+            return;
+        }
+
+        this.modalRefs.title.textContent = title;
+        this.modalRefs.body.textContent = message;
+        this.modalRefs.confirmButton.textContent = confirmLabel;
+
+        const markup = this.getModalIconMarkup(variant);
+        this.modalRefs.icon.innerHTML = markup;
+        this.modalRefs.icon.className = `app-modal-icon ${variant}`;
+
+        this.activeModalConfirmHandler = typeof onConfirm === 'function' ? onConfirm : null;
+
+        this.modalElement.classList.add('visible');
+        this.modalElement.setAttribute('aria-hidden', 'false');
+
+        if (this.modalRefs.confirmButton) {
+            this.modalRefs.confirmButton.focus({ preventScroll: true });
+        }
+    }
+
+    hideModal(shouldRunConfirm = false) {
+        if (!this.modalElement) {
+            return;
+        }
+
+        this.modalElement.classList.remove('visible');
+        this.modalElement.setAttribute('aria-hidden', 'true');
+
+        const handler = this.activeModalConfirmHandler;
+        this.activeModalConfirmHandler = null;
+
+        if (shouldRunConfirm && typeof handler === 'function') {
+            handler();
+        }
+    }
+
+    getModalIconMarkup(variant) {
+        const icons = {
+            success: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                </svg>
+            `,
+            error: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+            `,
+            warning: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L12.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+            `,
+            info: `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+            `
+        };
+
+        return icons[variant] || icons.info;
     }
 
     async handleFile(file) {
@@ -391,10 +502,21 @@ class DataQualityDashboard {
             this.history = [];
             this.renderHistory();
 
-            alert(result.message || 'History cleared successfully');
+            this.showModal({
+                title: 'History Cleared',
+                message: result.message || 'History cleared successfully',
+                variant: 'success',
+                confirmLabel: 'Great'
+            });
         } catch (error) {
             console.error('Error clearing history:', error);
-            alert('Failed to clear history: ' + error.message);
+            const message = (error && error.message) ? error.message : 'An unexpected error occurred while clearing history.';
+            this.showModal({
+                title: 'Unable to Clear History',
+                message,
+                variant: 'error',
+                confirmLabel: 'OK'
+            });
         } finally {
             await this.loadHistory();
             if (button) {
@@ -1019,6 +1141,7 @@ class DataQualityDashboard {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.hideIssueDetail();
+                this.hideModal();
             }
         });
 

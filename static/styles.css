@@ -1328,6 +1328,119 @@ input:focus {
     font-weight: 500;
 }
 
+/* Feedback Modal */
+.app-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    z-index: 1400;
+}
+
+.app-modal.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.app-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.65);
+}
+
+.app-modal-dialog {
+    position: relative;
+    background: var(--pure-white);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+    padding: var(--space-6);
+    width: min(420px, calc(100% - 48px));
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    z-index: 1;
+}
+
+.app-modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.app-modal-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--near-black);
+    flex: 1;
+}
+
+.app-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--cool-gray);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.app-modal-close:hover {
+    color: var(--near-black);
+}
+
+.app-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 240, 255, 0.12);
+    color: var(--info);
+    flex-shrink: 0;
+}
+
+.app-modal-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.app-modal-icon.success {
+    background: rgba(0, 255, 148, 0.12);
+    color: var(--success);
+}
+
+.app-modal-icon.error {
+    background: rgba(255, 0, 110, 0.12);
+    color: var(--error);
+}
+
+.app-modal-icon.warning {
+    background: rgba(255, 184, 0, 0.12);
+    color: var(--warning-amber);
+}
+
+.app-modal-body {
+    color: var(--deep-gray);
+    font-size: var(--text-base);
+    line-height: 1.6;
+}
+
+.app-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
 @media (max-width: 1024px) {
     .detail-panel.expanded {
         width: 700px;
