@@ -7,6 +7,7 @@ class DataQualityDashboard {
         this.modalElement = null;
         this.modalRefs = {};
         this.activeModalConfirmHandler = null;
+        this.pendingConfirmPromise = null;
 
         this.init();
     }
@@ -144,6 +145,7 @@ class DataQualityDashboard {
             body: this.modalElement.querySelector('[data-modal-body]'),
             icon: this.modalElement.querySelector('[data-modal-icon]'),
             confirmButton: this.modalElement.querySelector('[data-modal-confirm]'),
+            cancelButton: this.modalElement.querySelector('[data-modal-cancel]'),
             closeTargets: Array.from(this.modalElement.querySelectorAll('[data-modal-close]'))
         };
 
@@ -157,6 +159,10 @@ class DataQualityDashboard {
             this.modalRefs.confirmButton.addEventListener('click', () => this.hideModal(true));
         }
 
+        if (this.modalRefs.cancelButton) {
+            this.modalRefs.cancelButton.addEventListener('click', () => this.hideModal(false));
+        }
+
         this.modalElement.setAttribute('aria-hidden', 'true');
     }
 
@@ -165,7 +171,9 @@ class DataQualityDashboard {
         message = '',
         variant = 'info',
         confirmLabel = 'Got it',
-        onConfirm = null
+        onConfirm = null,
+        isConfirm = false,
+        cancelLabel = 'Cancel'
     } = {}) {
         if (!this.modalElement || !this.modalRefs || !this.modalRefs.title || !this.modalRefs.body || !this.modalRefs.icon || !this.modalRefs.confirmButton) {
             if (message) {
@@ -177,6 +185,16 @@ class DataQualityDashboard {
         this.modalRefs.title.textContent = title;
         this.modalRefs.body.textContent = message;
         this.modalRefs.confirmButton.textContent = confirmLabel;
+
+        // Show/hide cancel button based on confirmation mode
+        if (this.modalRefs.cancelButton) {
+            if (isConfirm) {
+                this.modalRefs.cancelButton.style.display = 'inline-flex';
+                this.modalRefs.cancelButton.textContent = cancelLabel;
+            } else {
+                this.modalRefs.cancelButton.style.display = 'none';
+            }
+        }
 
         const markup = this.getModalIconMarkup(variant);
         this.modalRefs.icon.innerHTML = markup;
@@ -192,6 +210,28 @@ class DataQualityDashboard {
         }
     }
 
+    showConfirmModal({
+        title = 'Confirm',
+        message = '',
+        variant = 'warning',
+        confirmLabel = 'Confirm',
+        cancelLabel = 'Cancel'
+    } = {}) {
+        return new Promise((resolve) => {
+            this.pendingConfirmPromise = resolve;
+            
+            this.showModal({
+                title,
+                message,
+                variant,
+                confirmLabel,
+                cancelLabel,
+                isConfirm: true,
+                onConfirm: null  // Don't use onConfirm for promise-based modals
+            });
+        });
+    }
+
     hideModal(shouldRunConfirm = false) {
         if (!this.modalElement) {
             return;
@@ -199,6 +239,12 @@ class DataQualityDashboard {
 
         this.modalElement.classList.remove('visible');
         this.modalElement.setAttribute('aria-hidden', 'true');
+
+        // Handle confirmation promise resolution first (before clearing handler)
+        if (this.pendingConfirmPromise) {
+            this.pendingConfirmPromise(shouldRunConfirm);
+            this.pendingConfirmPromise = null;
+        }
 
         const handler = this.activeModalConfirmHandler;
         this.activeModalConfirmHandler = null;
@@ -1116,7 +1162,15 @@ class DataQualityDashboard {
         const clearHistoryBtn = document.getElementById('clear-history-btn');
         if (clearHistoryBtn) {
             clearHistoryBtn.addEventListener('click', async () => {
-                if (!confirm('Clear all history?')) {
+                const confirmed = await this.showConfirmModal({
+                    title: 'Clear History',
+                    message: 'Are you sure you want to clear all analysis history? This action cannot be undone.',
+                    variant: 'warning',
+                    confirmLabel: 'Clear History',
+                    cancelLabel: 'Cancel'
+                });
+
+                if (!confirmed) {
                     return;
                 }
 
