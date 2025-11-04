@@ -79,16 +79,26 @@ class DataQualityDashboard {
     }
 
     async logout() {
-        if (confirm('Are you sure you want to logout?')) {
-            try {
-                // Clear user data from localStorage
-                localStorage.removeItem('currentUser');
+        const confirmed = await this.showConfirmModal({
+            title: 'Logout',
+            message: 'Are you sure you want to logout? You will be redirected to the login page.',
+            variant: 'warning',
+            confirmLabel: 'Logout',
+            cancelLabel: 'Stay'
+        });
 
-                await fetch('/auth/logout', { method: 'POST' });
-                window.location.href = '/auth/login';
-            } catch (error) {
-                console.error('Logout error:', error);
-            }
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            // Clear user data from localStorage
+            localStorage.removeItem('currentUser');
+
+            await fetch('/auth/logout', { method: 'POST' });
+            window.location.href = '/auth/login';
+        } catch (error) {
+            console.error('Logout error:', error);
         }
     }
 
@@ -1158,6 +1168,13 @@ class DataQualityDashboard {
         document.getElementById('export-btn').addEventListener('click', () => {
             this.exportReport();
         });
+
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                await this.logout();
+            });
+        }
 
         const clearHistoryBtn = document.getElementById('clear-history-btn');
         if (clearHistoryBtn) {
